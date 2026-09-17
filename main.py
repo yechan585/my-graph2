@@ -25,7 +25,8 @@ def load_data():
     df['genre'] = df['genre'].astype(str).str.split('|').str[0]
     
     # 수치형 변환 (쉼표 제거 및 숫자 파싱)
-    for col in ['total_audi', 'first_scrn']:
+    num_cols = ['total_audi', 'first_scrn', 'first_week_audi']
+    for col in num_cols:
         df[col] = df[col].astype(str).str.replace(',', '')
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
     
@@ -165,5 +166,35 @@ fig5.update_traces(
 st.plotly_chart(fig5, use_container_width=True)
 
 st.info("💡 **이 그래프로 알 수 있는 것:** 주요 장르별 관객 수의 중간값과 분포 범위를 비교할 수 있으며, 상자 밖의 점(이상치)을 통해 장르 평균을 훨씬 뛰어넘는 대형 흥행작들을 한눈에 확인할 수 있습니다.")
+
+st.divider()
+
+# 6. 스크린수, 총 관객수, 첫 주 관객수의 관계 (버블 차트)
+st.subheader("6. 개봉일 스크린수·총 관객수·첫 주 관객수의 관계 (버블 차트)")
+
+fig6 = px.scatter(
+    df,
+    x='first_scrn',
+    y='total_audi',
+    size='first_week_audi',
+    color='genre',
+    hover_name='movieNm',
+    size_max=50,
+    title="개봉일 스크린수 vs 총 관객수 (버블 크기: 개봉 첫 주 관객수)",
+    labels={
+        'first_scrn': '개봉일 스크린수(개)',
+        'total_audi': '총 관객수(명)',
+        'first_week_audi': '개봉 첫 주 관객수(명)',
+        'genre': '장르'
+    }
+)
+
+fig6.update_traces(
+    hovertemplate="<b>영화명:</b> %{hovertext}<br><b>개봉일 스크린수:</b> %{x:,}개<br><b>총 관객수:</b> %{y:,}명<br><b>개봉 첫 주 관객수:</b> %{marker.size:,}명<extra></extra>"
+)
+
+st.plotly_chart(fig6, use_container_width=True)
+
+st.info("💡 **이 그래프로 알 수 있는 것:** 점의 크기(첫 주 관객수)를 통해 초반 흥행 몰이에 성공하여 최종 관객수까지 이어진 영화와, 초반에는 작았지만(작은 버블) 입소문을 통해 입체적으로 대형 흥행(높은 위치)을 이뤄낸 영화를 한눈에 구분할 수 있습니다.")
 
 st.divider()
