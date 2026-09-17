@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import requests
+import io
 
 # 페이지 설정
 st.set_page_config(page_title="영화 데이터 그래프 도감 2 - 분포와 관계", layout="wide")
@@ -10,14 +12,22 @@ st.title("영화 데이터 그래프 도감 2 - 분포와 관계")
 # 데이터 불러오기 및 전처리
 @st.cache_data
 def load_data():
-    url = "[https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_movies.csv](https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_movies.csv)"
-    df = pd.read_csv(url)
+    url = "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_movies.csv"
+    
+    # URL에서 직접 텍스트를 받아와 StringIO로 전달 (URL 접근 에러 방지)
+    response = requests.get(url)
+    response.raise_for_status()
+    csv_data = io.StringIO(response.text)
+    
+    df = pd.read_csv(csv_data)
     
     # genre 열 전처리: '|' 기호로 연결된 장르 중 첫 번째 장르만 추출
     df['genre'] = df['genre'].astype(str).str.split('|').str[0]
     
-    # total_audi 수치형 변환
+    # total_audi 수치형 변환 (쉼표나 문자 등이 섞여있을 경우 처리)
+    df['total_audi'] = df['total_audi'].astype(str).str.replace(',', '')
     df['total_audi'] = pd.to_numeric(df['total_audi'], errors='coerce').fillna(0)
+    
     return df
 
 df = load_data()
