@@ -1,37 +1,11 @@
-# 영화 데이터 그래프 도감 1 - 시간
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-
-st.set_page_config(page_title="영화 데이터 그래프 도감 1 - 시간", layout="wide")
-st.title("영화 데이터 그래프 도감 1 - 시간")
-
-DATA_URL = "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_daily.csv"
-
-
-@st.cache_data
-def load_data():
-    # 1년치(365일) 일별 박스오피스 10위권 기록을 불러옵니다.
-    df = pd.read_csv(DATA_URL)
-    # 여덟 자리 숫자로 된 날짜 열을 진짜 날짜로 바꿉니다.
-    df["날짜"] = pd.to_datetime(df["날짜"], format="%Y%m%d")
-    return df
-
-
-df = load_data()
-
-# ── 그래프 1. 영화 하나의 흥행 곡선 ──────────────────────────
-st.header("1. 한 영화의 흥행 곡선")
-
-# 드롭다운으로 영화를 고릅니다.
-movie_list = sorted(df["영화명"].unique())
-movie = st.selectbox("영화를 고르세요", movie_list)
-
-one = df[df["영화명"] == movie].sort_values("날짜")
-fig = px.line(one, x="날짜", y="일관객", markers=True)
-fig.update_traces(hovertemplate="날짜 %{x|%Y-%m-%d}<br>관객 %{y:,}명<extra></extra>")
-st.plotly_chart(fig, width="stretch")
-
-st.caption("이 그래프로 알 수 있는 것: (한 문장으로 적어 보세요)")
-
-# ── 앞으로 그래프 2, 3, 4, 5가 이 아래에 추가됩니다 ──────────
+스트림릿 앱(main.py)을 새로 만들어 줘. 제목은 '영화 데이터 그래프 도감 2 - 분포와 관계'.
+- 데이터는 이 주소에서 불러와:
+  https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_movies.csv
+  1년간 박스오피스 10위권에 든 영화 가운데 이 기간에 개봉한 216편의 요약표야. 열은
+  movieCd(영화코드) · movieNm(영화명) · openDt(개봉일, 여덟 자리 숫자) ·
+  genre(장르 - 세로막대 기호로 여러 개 적힌 영화는 첫 번째 장르만 써) · nation(제작 국가) ·
+  first_scrn(개봉일 스크린수) · first_show(개봉일 상영횟수) · first_week_audi(개봉 첫 주 관객) ·
+  total_audi(총 관객) · days_in_top10(10위권에 머문 날수).
+- 첫 그래프: 장르별 영화 편수를 플롯리 도넛 그래프로 보여 줘. 조각에 마우스를 올리면 편수와 비율이 보이게.
+- 그래프마다 아래에 '이 그래프로 알 수 있는 것' 한 문장을 넣을 자리를 만들고, 구역을 나눠 줘.
+- 필요한 라이브러리 목록(requirements.txt)도 같이 줘. 버전 숫자 없이 이름만.
