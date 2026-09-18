@@ -22,6 +22,7 @@ def load_data():
     # 숫자형 데이터 변환 및 결측치 처리
     df['total_audi'] = pd.to_numeric(df['total_audi'], errors='coerce').fillna(0)
     df['first_scrn'] = pd.to_numeric(df['first_scrn'], errors='coerce').fillna(0)
+    df['first_week_audi'] = pd.to_numeric(df['first_week_audi'], errors='coerce').fillna(0)
     
     return df
 
@@ -160,19 +161,17 @@ st.write("")
 # -------------------------------------------------------------------
 st.subheader("5. 주요 장르별 총 관객 수 분포 (박스플롯)")
 
-# 영화 수 10편 이상인 장르 필터링
 genre_counts_series = df['genre'].value_counts()
 top_genres = genre_counts_series[genre_counts_series >= 10].index
 df_filtered_genres = df[df['genre'].isin(top_genres)]
 
-# 박스플롯 생성 (points='outliers' 또는 'all'로 점 표시 설정)
 fig_box = px.box(
     df_filtered_genres,
     x='genre',
     y='total_audi',
     color='genre',
     hover_name='movieNm',
-    points='outliers',  # 이상치 점을 드러냄
+    points='outliers',
     title="영화 10편 이상 주요 장르별 총 관객 수 분포",
     labels={
         'genre': '장르',
@@ -189,3 +188,37 @@ st.plotly_chart(fig_box, use_container_width=True)
 st.divider()
 st.markdown("💡 **이 그래프로 알 수 있는 것**")
 st.info("주요 장르 간 중간 관객 수 및 변동 폭 차이를 비교할 수 있고, 각 장르 상자 위로 크게 벗어난 이상치 점을 통해 장르 내 초대형 흥행작을 판별할 수 있습니다.")
+
+st.write("")
+
+# -------------------------------------------------------------------
+# 여섯 번째 그래프: 개봉일 스크린수 vs 총 관객 수 (버블 차트)
+# -------------------------------------------------------------------
+st.subheader("6. 개봉일 스크린 수, 총 관객 수, 개봉 첫 주 관객 수의 관계 (버블 차트)")
+
+fig_bubble = px.scatter(
+    df,
+    x='first_scrn',
+    y='total_audi',
+    size='first_week_audi',
+    color='genre',
+    hover_name='movieNm',
+    size_max=40,
+    title="개봉일 스크린 수 vs 총 관객 수 (버블 크기: 개봉 첫 주 관객 수)",
+    labels={
+        'first_scrn': '개봉일 스크린 수 (개)',
+        'total_audi': '총 관객 수 (명)',
+        'first_week_audi': '개봉 첫 주 관객 수 (명)',
+        'genre': '장르'
+    }
+)
+
+fig_bubble.update_traces(
+    hovertemplate="<b>%{hovertext}</b><br>개봉일 스크린 수: %{x:,.0f}개<br>총 관객 수: %{y:,.0f}명<br>개봉 첫 주 관객 수: %{marker.size:,.0f}명<extra></extra>"
+)
+
+st.plotly_chart(fig_bubble, use_container_width=True)
+
+st.divider()
+st.markdown("💡 **이 그래프로 알 수 있는 것**")
+st.info("개봉일 스크린 수와 총 관객 수 관계에 더해, 원의 크기를 통해 초기 흥행(개봉 첫 주 관객 수)이 최종 총 관객 수 형성 및 흥행 지속성에 얼마나 영향을 주었는지 3가지 차원으로 파악할 수 있습니다.")
