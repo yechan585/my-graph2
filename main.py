@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import requests
+import io
 
 # 페이지 설정
 st.set_page_config(page_title="영화 데이터 그래프 도감 2 - 분포와 관계", layout="wide")
@@ -11,13 +13,21 @@ st.title("영화 데이터 그래프 도감 2 - 분포와 관계")
 @st.cache_data
 def load_data():
     url = "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_movies.csv"
-    df = pd.read_csv(url)
+    
+    # URL에서 직접 텍스트를 받아와 StringIO로 전달 (URL 접근 에러 방지)
+    response = requests.get(url)
+    response.raise_for_status()
+    csv_data = io.StringIO(response.text)
+    
+    df = pd.read_csv(csv_data)
     
     # genre 열 전처리: '|' 기호로 연결된 장르 중 첫 번째 장르만 추출
     df['genre'] = df['genre'].astype(str).str.split('|').str[0]
     
-    # total_audi 수치형 변환
+    # total_audi 수치형 변환 (쉼표나 문자 등이 섞여있을 경우 처리)
+    df['total_audi'] = df['total_audi'].astype(str).str.replace(',', '')
     df['total_audi'] = pd.to_numeric(df['total_audi'], errors='coerce').fillna(0)
+    
     return df
 
 df = load_data()
@@ -75,34 +85,3 @@ st.plotly_chart(fig2, use_container_width=True)
 st.info("💡 **이 그래프로 알 수 있는 것:** 각 장르 내에서 어떤 영화가 총 관객 수의 대부분을 차지하며 흥행을 주도했는지 한눈에 비교해 볼 수 있습니다.")
 
 st.divider()
-```eof
-
-기존 도넛 그래프 아래에 트리맵 그래프와 해당 분석 문구 구역을 새롭게 구성했습니다. 추가로 필요한 그래프가 있다면 언제든 말씀해 주세요!Plotly 기반(Python)에서 기존 코드 뒤에 두 번째 그래프로 **트리맵(Treemap)**을 추가하는 예시 코드입니다. 
-
-`px.treemap`을 활용하면 장르(parents) - 영화명(labels) 계층 구조와 관객수(values)에 따른 크기를 손쉽게 표현할 수 있으며, 마우스 호버 시 지정한 정보가 표시됩니다.
-
-```python
-import plotly.express as px
-
-# 1. 데이터 예시 (기존 df에 맞춰 컬럼명을 확인해 주세요)
-# df: 'genre', 'title', 'total_audi' 컬럼을 포함하는 DataFrame
-
-# 2. 트리맵 그래프 생성
-fig_treemap = px.treemap(
-    df,
-    path=[px.Constant("전체"), "genre", "title"],  # 계층 구조: 전체 -> 장르 -> 영화명
-    values="total_audi",  # 칸의 크기: 총 관객 수
-    color="genre",  # 장르별 색상 구분
-    title="장르 및 영화별 총 관객 수 (Treemap)",
-    custom_data=["title", "total_audi"],  # 호버 툴팁에 사용할 데이터
-)
-
-# 3. 마우스 호버(Hover) 툴팁 설정
-fig_treemap.update_traces(
-    hovertemplate="<b>영화명:</b> %{customdata[0]}<br>"
-    + "<b>총 관객수:</b> %{customdata[1]:,}명<extra></extra>"
-)
-
-# 4. 레이아웃 설정 및 출력
-fig_treemap.update_layout(margin=dict(t=50, l=10, r=10, b=10))
-fig_treemap.show()
