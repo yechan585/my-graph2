@@ -1,4 +1,124 @@
-좋아, 세 번째 그래프를 추가해.
-- total_audi(총 관객)의 히스토그램을 그려 줘.
-- 대부분의 영화가 어느 구간에 몰려 있는지, 가장 관객이 많은 영화 이름이 무엇인지
-  그래프 아래에 문구로 보여 줘.
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+
+# 페이지 기본 설정
+st.set_page_config(
+    page_title="영화 데이터 그래프 도감 2 - 분포와 관계",
+    layout="wide"
+)
+
+st.title("영화 데이터 그래프 도감 2 - 분포와 관계")
+
+# 데이터 불러오기 및 전처리
+@st.cache_data
+def load_data():
+    url = "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_movies.csv"
+    df = pd.read_csv(url)
+    
+    # genre 열 전처리: 세로막대 기호(|)로 분리 후 첫 번째 장르만 추출
+    df['genre'] = df['genre'].astype(str).str.split('|').str[0]
+    
+    # 숫자형 데이터 변환 및 결측치 처리
+    df['total_audi'] = pd.to_numeric(df['total_audi'], errors='coerce').fillna(0)
+    
+    return df
+
+df = load_data()
+
+# -------------------------------------------------------------------
+# 첫 번째 그래프: 장르별 영화 편수 (도넛 그래프)
+# -------------------------------------------------------------------
+st.subheader("1. 장르별 영화 편수 비율")
+
+genre_counts = df['genre'].value_counts().reset_index()
+genre_counts.columns = ['genre', 'count']
+
+fig_donut = px.pie(
+    genre_counts,
+    values='count',
+    names='genre',
+    hole=0.4,
+    title="장르별 영화 분포"
+)
+
+fig_donut.update_traces(
+    textinfo='percent+label',
+    hovertemplate="<b>장르: %{label}</b><br>편수: %{value}편<br>비율: %{percent}<extra></extra>"
+)
+
+st.plotly_chart(fig_donut, use_container_width=True)
+
+st.divider()
+st.markdown("💡 **이 그래프로 알 수 있는 것**")
+st.info("박스오피스 상위권 영화 중 특정 주요 장르가 차지하는 비중과 장르별 다변화 정도를 한눈에 파악할 수 있습니다.")
+
+st.write("")
+
+# -------------------------------------------------------------------
+# 두 번째 그래프: 장르-영화 계층별 총 관객 수 (트리맵)
+# -------------------------------------------------------------------
+st.subheader("2. 장르 및 영화별 총 관객 수 분포")
+
+df_treemap = df.groupby(['genre', 'movieNm'], as_index=False)['total_audi'].sum()
+
+fig_treemap = px.treemap(
+    df_treemap,
+    path=['genre', 'movieNm'],
+    values='total_audi',
+    title="장르 및 영화별 총 관객 수 (Treemap)",
+    color='genre'
+)
+
+fig_treemap.update_traces(
+    hovertemplate="<b>%{label}</b><br>총 관객 수: %{value:,.0f}명<extra></extra>"
+)
+
+st.plotly_chart(fig_treemap, use_container_width=True)
+
+st.divider()
+st.markdown("💡 **이 그래프로 알 수 있는 것**")
+st.info("장르 전체의 관객 수 규모와 함께, 각 장르 내에서 어떤 영화가 총 관객 수를 주도했는지 개별 영화의 기여도를 직관적으로 비교할 수 있습니다.")
+
+st.write("")
+
+# -------------------------------------------------------------------
+# 세 번째 그래프: 총 관객 수 히스토그램
+# -------------------------------------------------------------------
+st.subheader("3. 총 관객 수 분포 (히스토그램)")
+
+# 히스토그램 그래프 생성
+fig_hist = px.histogram(
+    df,
+    x='total_audi',
+    nbins=30,
+    title="영화별 총 관객 수 분포",
+    labels={'total_audi': '총 관객 수 (명)'}
+)
+
+fig_hist.update_traces(
+    hovertemplate="관객 수 구간: %{x}<br>영화 수: %{y}편<extra></extra>"
+)
+
+fig_hist.update_layout(
+    yaxis_title="영화 수 (편)",
+    bargap=0.1
+)
+
+st.plotly_chart(fig_hist, use_container_width=True)
+
+# 데이터 자동 분석 로직
+max_movie = df.loc[df['total_audi'].idxmax()]
+max_movie_name = max_movie['movieNm']
+max_movie_audi = int(max_movie['total_audi'])
+
+# 500만 명 미만 영화 비중 계산
+under_5m_count = (df['total_audi'] < 5000000).sum()
+under_5m_ratio = (under_5m_count / len(df)) * 100
+
+st.divider()
+st.markdown("💡 **이 그래프로 알 수 있는 것**")
+st.info(
+    f"대부분의 영화({under_5m_ratio:.1f}%)가 **관객 수 500만 명 미만** 구간에 몰려 있으며, "
+    f"가장 많은 관객 수를 기록한 영화는 **'{max_movie_name}'**({max_movie_audi:,.0f}명)입니다."
+)
