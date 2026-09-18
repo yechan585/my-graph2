@@ -22,10 +22,6 @@ def load_data():
     # 숫자형 데이터 변환 및 결측치 처리
     df['total_audi'] = pd.to_numeric(df['total_audi'], errors='coerce').fillna(0)
     
-    # 중복 영화 제목으로 인한 트리맵 에러 방지: 고유 라벨 생성
-    # 예: "명량 (10001)" 형태로 표기하여 고유성 확보
-    df['movie_label'] = df['movieNm'] + " (" + df['movieCd'].astype(str) + ")"
-    
     return df
 
 df = load_data()
@@ -68,10 +64,13 @@ st.write("")
 # -------------------------------------------------------------------
 st.subheader("2. 장르 및 영화별 총 관객 수 분포")
 
-# 트리맵 그래프 생성 (movie_label 사용으로 중복 방지)
+# 트리맵 오류 방지: 장르와 영화명 기준 그룹화하여 중복 관계 제거
+df_treemap = df.groupby(['genre', 'movieNm'], as_index=False)['total_audi'].sum()
+
+# 트리맵 그래프 생성
 fig_treemap = px.treemap(
-    df,
-    path=['genre', 'movie_label'],
+    df_treemap,
+    path=['genre', 'movieNm'],
     values='total_audi',
     title="장르 및 영화별 총 관객 수 (Treemap)",
     color='genre'
