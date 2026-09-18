@@ -64,6 +64,7 @@ st.divider()
 # 2. 장르 및 영화별 총 관객 수 (트리맵)
 st.subheader("2. 장르 및 영화별 총 관객 수 분포")
 
+# Plotly 트리맵 생성 (계층 구조: 전체 -> 장르 -> 영화명)
 fig2 = px.treemap(
     df,
     path=[px.Constant("전체 영화"), 'genre', 'movieNm'],
@@ -71,8 +72,9 @@ fig2 = px.treemap(
     title="장르 내 영화별 총 관객 수 트리맵"
 )
 
+# 마우스 호버 시 영화명과 총 관객 수가 표기되도록 설정
 fig2.update_traces(
-    hovertemplate="<b>구분:</b> %{label}<br><b>총 관객 수:</b> %{value:,}명<extra></extra>"
+    hovertemplate="<b>영화명:</b> %{label}<br><b>총 관객 수:</b> %{value:,}명<extra></extra>"
 )
 
 st.plotly_chart(fig2, use_container_width=True)
@@ -198,3 +200,4 @@ st.plotly_chart(fig6, use_container_width=True)
 st.info("💡 **이 그래프로 알 수 있는 것:** 점의 크기(첫 주 관객수)를 통해 초반 흥행 몰이에 성공하여 최종 관객수까지 이어진 영화와, 초반에는 작았지만(작은 버블) 입소문을 통해 입체적으로 대형 흥행(높은 위치)을 이뤄낸 영화를 한눈에 구분할 수 있습니다.")
 
 st.divider()
+ 
