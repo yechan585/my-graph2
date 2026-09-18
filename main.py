@@ -21,6 +21,7 @@ def load_data():
     
     # 숫자형 데이터 변환 및 결측치 처리
     df['total_audi'] = pd.to_numeric(df['total_audi'], errors='coerce').fillna(0)
+    df['first_scrn'] = pd.to_numeric(df['first_scrn'], errors='coerce').fillna(0)
     
     return df
 
@@ -87,7 +88,6 @@ st.write("")
 # -------------------------------------------------------------------
 st.subheader("3. 총 관객 수 분포 (히스토그램)")
 
-# 히스토그램 그래프 생성
 fig_hist = px.histogram(
     df,
     x='total_audi',
@@ -112,7 +112,6 @@ max_movie = df.loc[df['total_audi'].idxmax()]
 max_movie_name = max_movie['movieNm']
 max_movie_audi = int(max_movie['total_audi'])
 
-# 500만 명 미만 영화 비중 계산
 under_5m_count = (df['total_audi'] < 5000000).sum()
 under_5m_ratio = (under_5m_count / len(df)) * 100
 
@@ -122,3 +121,35 @@ st.info(
     f"대부분의 영화({under_5m_ratio:.1f}%)가 **관객 수 500만 명 미만** 구간에 몰려 있으며, "
     f"가장 많은 관객 수를 기록한 영화는 **'{max_movie_name}'**({max_movie_audi:,.0f}명)입니다."
 )
+
+st.write("")
+
+# -------------------------------------------------------------------
+# 네 번째 그래프: 개봉일 스크린수 vs 총 관객 수 (산점도)
+# -------------------------------------------------------------------
+st.subheader("4. 개봉일 스크린 수와 총 관객 수의 관계")
+
+# 산점도 생성 (x: first_scrn, y: total_audi, color: genre, hover_name: movieNm)
+fig_scatter = px.scatter(
+    df,
+    x='first_scrn',
+    y='total_audi',
+    color='genre',
+    hover_name='movieNm',
+    title="개봉일 스크린 수 vs 총 관객 수",
+    labels={
+        'first_scrn': '개봉일 스크린 수 (개)',
+        'total_audi': '총 관객 수 (명)',
+        'genre': '장르'
+    }
+)
+
+fig_scatter.update_traces(
+    hovertemplate="<b>%{hovertext}</b><br>개봉일 스크린 수: %{x:,.0f}개<br>총 관객 수: %{y:,.0f}명<extra></extra>"
+)
+
+st.plotly_chart(fig_scatter, use_container_width=True)
+
+st.divider()
+st.markdown("💡 **이 그래프로 알 수 있는 것**")
+st.info("개봉일 스크린 수가 많을수록 대체로 총 관객 수가 증가하는 양의 상관관계를 보이며, 초기 스크린 확보가 흥행 규모에 중요한 요소임을 알 수 있습니다.")
