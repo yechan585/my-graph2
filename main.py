@@ -22,7 +22,9 @@ def load_data():
     # 숫자형 데이터 변환 및 결측치 처리
     df['total_audi'] = pd.to_numeric(df['total_audi'], errors='coerce').fillna(0)
     df['first_scrn'] = pd.to_numeric(df['first_scrn'], errors='coerce').fillna(0)
+    df['first_show'] = pd.to_numeric(df['first_show'], errors='coerce').fillna(0)
     df['first_week_audi'] = pd.to_numeric(df['first_week_audi'], errors='coerce').fillna(0)
+    df['days_in_top10'] = pd.to_numeric(df['days_in_top10'], errors='coerce').fillna(0)
     
     # nation 결측치 및 빈 문자열 처리
     df['nation'] = df['nation'].fillna('미상').astype(str)
@@ -111,7 +113,6 @@ fig_hist.update_layout(
 
 st.plotly_chart(fig_hist, use_container_width=True)
 
-# 데이터 자동 분석 로직
 max_movie = df.loc[df['total_audi'].idxmax()]
 max_movie_name = max_movie['movieNm']
 max_movie_audi = int(max_movie['total_audi'])
@@ -233,11 +234,9 @@ st.write("")
 # -------------------------------------------------------------------
 st.subheader("7. 제작 국가 및 장르별 영화 편수 (선버스트)")
 
-# 제작 국가와 장르별 영화 편수 집계
 df_sunburst = df.groupby(['nation', 'genre'], as_index=False).size()
 df_sunburst.columns = ['nation', 'genre', 'count']
 
-# 선버스트 차트 생성 (nation -> genre 계층 구조, 크기: count)
 fig_sunburst = px.sunburst(
     df_sunburst,
     path=['nation', 'genre'],
@@ -255,3 +254,65 @@ st.plotly_chart(fig_sunburst, use_container_width=True)
 st.divider()
 st.markdown("💡 **이 그래프로 알 수 있는 것**")
 st.info("영화의 제작 국가별 비중과 각 국가 내에서 어떤 장르의 영화들이 주로 제작되어 상위권에 진입했는지 계층적 비중을 다면적으로 살펴볼 수 있습니다.")
+
+st.write("")
+
+# -------------------------------------------------------------------
+# 여덟 번째 그래프: 10위권 체류 날수 vs 총 관객 수 (산점도)
+# -------------------------------------------------------------------
+st.subheader("8. 10위권 체류 기간과 총 관객 수의 관계")
+
+fig_top10_scatter = px.scatter(
+    df,
+    x='days_in_top10',
+    y='total_audi',
+    color='genre',
+    hover_name='movieNm',
+    title="10위권에 오래 머문 영화는 총 관객도 많은가",
+    labels={
+        'days_in_top10': '10위권에 머문 날수 (일)',
+        'total_audi': '총 관객 수 (명)',
+        'genre': '장르'
+    }
+)
+
+fig_top10_scatter.update_traces(
+    hovertemplate="<b>%{hovertext}</b><br>10위권 체류 날수: %{x}일<br>총 관객 수: %{y:,.0f}명<extra></extra>"
+)
+
+st.plotly_chart(fig_top10_scatter, use_container_width=True)
+
+st.divider()
+st.markdown("💡 **이 그래프로 알 수 있는 것**")
+st.info("10위권 내 체류 기간(롱런 여부)이 길수록 총 관객 수 역시 크게 증가하는 강한 양의 상관관계를 보이며, 장기 흥행이 대형 관객 집계의 핵심 요인임을 확인할 수 있습니다.")
+
+st.write("")
+
+# -------------------------------------------------------------------
+# 아홉 번째 그래프: 개봉일 상영횟수 vs 개봉 첫 주 관객 수 (산점도)
+# -------------------------------------------------------------------
+st.subheader("9. 개봉일 상영 횟수와 첫 주 관객 수의 관계")
+
+fig_show_scatter = px.scatter(
+    df,
+    x='first_show',
+    y='first_week_audi',
+    color='genre',
+    hover_name='movieNm',
+    title="개봉 첫날 많이 틀어준 영화가 첫 주에 관객도 많이 들었을까",
+    labels={
+        'first_show': '개봉일 상영 횟수 (회)',
+        'first_week_audi': '개봉 첫 주 관객 수 (명)',
+        'genre': '장르'
+    }
+)
+
+fig_show_scatter.update_traces(
+    hovertemplate="<b>%{hovertext}</b><br>개봉일 상영 횟수: %{x:,.0f}회<br>개봉 첫 주 관객 수: %{y:,.0f}명<extra></extra>"
+)
+
+st.plotly_chart(fig_show_scatter, use_container_width=True)
+
+st.divider()
+st.markdown("💡 **이 그래프로 알 수 있는 것**")
+st.info("개봉 당일 상영 횟수가 많을수록 개봉 첫 주 관객 집중도가 뚜렷하게 높아지며, 초기 상영 회차 배정이 초반 기선 제압 및 흥행 모멘텀 형성에 직결됨을 알 수 있습니다.")
