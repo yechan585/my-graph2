@@ -18,6 +18,10 @@ def load_data():
     
     # genre 열 전처리: 세로막대 기호(|)로 분리 후 첫 번째 장르만 추출
     df['genre'] = df['genre'].astype(str).str.split('|').str[0]
+    
+    # 숫자형 데이터 변환 및 결측치 처리 (에러 방지)
+    df['total_audi'] = pd.to_numeric(df['total_audi'], errors='coerce').fillna(0)
+    
     return df
 
 df = load_data()
@@ -53,7 +57,7 @@ st.divider()
 st.markdown("💡 **이 그래프로 알 수 있는 것**")
 st.info("박스오피스 상위권 영화 중 특정 주요 장르가 차지하는 비중과 장르별 다변화 정도를 한눈에 파악할 수 있습니다.")
 
-st.write("") # 공간 여백
+st.write("")
 
 # -------------------------------------------------------------------
 # 두 번째 그래프: 장르-영화 계층별 총 관객 수 (트리맵)
@@ -63,13 +67,13 @@ st.subheader("2. 장르 및 영화별 총 관객 수 분포")
 # 트리맵 그래프 생성 (계층 구조: genre -> movieNm, 크기: total_audi)
 fig_treemap = px.treemap(
     df,
-    path=[px.Constant("전체"), 'genre', 'movieNm'],
+    path=['genre', 'movieNm'],
     values='total_audi',
     title="장르 및 영화별 총 관객 수 (Treemap)",
     color='genre'
 )
 
-# 마우스오버 시 영화명(label)과 총 관객 수(value) 표시
+# 마우스오버 시 영화명/장르명(label)과 총 관객 수(value) 표시
 fig_treemap.update_traces(
     hovertemplate="<b>%{label}</b><br>총 관객 수: %{value:,.0f}명<extra></extra>"
 )
