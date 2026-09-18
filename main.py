@@ -1,87 +1,37 @@
+# 영화 데이터 그래프 도감 1 - 시간
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import requests
-import io
 
-# 페이지 설정
-st.set_page_config(page_title="영화 데이터 그래프 도감 2 - 분포와 관계", layout="wide")
+st.set_page_config(page_title="영화 데이터 그래프 도감 1 - 시간", layout="wide")
+st.title("영화 데이터 그래프 도감 1 - 시간")
 
-st.title("영화 데이터 그래프 도감 2 - 분포와 관계")
+DATA_URL = "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_daily.csv"
 
-# 데이터 불러오기 및 전처리
+
 @st.cache_data
 def load_data():
-    url = "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_movies.csv"
-    
-    # URL에서 직접 텍스트를 받아와 StringIO로 전달 (URL 접근 에러 방지)
-    response = requests.get(url)
-    response.raise_for_status()
-    csv_data = io.StringIO(response.text)
-    
-    df = pd.read_csv(csv_data)
-    
-    # genre 열 전처리: '|' 기호로 연결된 장르 중 첫 번째 장르만 추출
-    df['genre'] = df['genre'].astype(str).str.split('|').str[0]
-    
-    # total_audi 수치형 변환 (쉼표나 문자 등이 섞여있을 경우 처리)
-    df['total_audi'] = df['total_audi'].astype(str).str.replace(',', '')
-    df['total_audi'] = pd.to_numeric(df['total_audi'], errors='coerce').fillna(0)
-    
+    # 1년치(365일) 일별 박스오피스 10위권 기록을 불러옵니다.
+    df = pd.read_csv(DATA_URL)
+    # 여덟 자리 숫자로 된 날짜 열을 진짜 날짜로 바꿉니다.
+    df["날짜"] = pd.to_datetime(df["날짜"], format="%Y%m%d")
     return df
+
 
 df = load_data()
 
-st.divider()
+# ── 그래프 1. 영화 하나의 흥행 곡선 ──────────────────────────
+st.header("1. 한 영화의 흥행 곡선")
 
-# 1. 장르별 영화 편수 (도넛 그래프)
-st.subheader("1. 장르별 영화 편수")
+# 드롭다운으로 영화를 고릅니다.
+movie_list = sorted(df["영화명"].unique())
+movie = st.selectbox("영화를 고르세요", movie_list)
 
-# 장르별 편수 집계
-genre_counts = df['genre'].value_counts().reset_index()
-genre_counts.columns = ['genre', 'count']
+one = df[df["영화명"] == movie].sort_values("날짜")
+fig = px.line(one, x="날짜", y="일관객", markers=True)
+fig.update_traces(hovertemplate="날짜 %{x|%Y-%m-%d}<br>관객 %{y:,}명<extra></extra>")
+st.plotly_chart(fig, width="stretch")
 
-# Plotly 도넛 그래프 생성
-fig1 = px.pie(
-    genre_counts,
-    names='genre',
-    values='count',
-    hole=0.4,
-    title="장르별 영화 편수 비율"
-)
+st.caption("이 그래프로 알 수 있는 것: (한 문장으로 적어 보세요)")
 
-# 마우스 호버 시 편수와 비율 표기
-fig1.update_traces(
-    textinfo='percent+label',
-    hovertemplate="<b>장르:</b> %{label}<br><b>편수:</b> %{value}편<br><b>비율:</b> %{percent}<extra></extra>"
-)
-
-st.plotly_chart(fig1, use_container_width=True)
-
-# 그래프 분석 구역
-st.info("💡 **이 그래프로 알 수 있는 것:** 특정 장르(예: 드라마, 애니메이션 등)가 박스오피스 상위권 영화 중 가장 큰 비중을 차지하고 있음을 확인할 수 있습니다.")
-
-st.divider()
-
-# 2. 장르 및 영화별 총 관객 수 (트리맵)
-st.subheader("2. 장르 및 영화별 총 관객 수 분포")
-
-# Plotly 트리맵 생성 (계층 구조: 전체 -> 장르 -> 영화명)
-fig2 = px.treemap(
-    df,
-    path=[px.Constant("전체 영화"), 'genre', 'movieNm'],
-    values='total_audi',
-    title="장르 내 영화별 총 관객 수 트리맵"
-)
-
-# 마우스 호버 시 영화명/장르 및 총 관객 수 표기
-fig2.update_traces(
-    hovertemplate="<b>구분:</b> %{label}<br><b>총 관객 수:</b> %{value:,}명<extra></extra>"
-)
-
-st.plotly_chart(fig2, use_container_width=True)
-
-# 그래프 분석 구역
-st.info("💡 **이 그래프로 알 수 있는 것:** 각 장르 내에서 어떤 영화가 총 관객 수의 대부분을 차지하며 흥행을 주도했는지 한눈에 비교해 볼 수 있습니다.")
-
-st.divider()
+# ── 앞으로 그래프 2, 3, 4, 5가 이 아래에 추가됩니다 ──────────
