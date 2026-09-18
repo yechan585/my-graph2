@@ -24,6 +24,9 @@ def load_data():
     df['first_scrn'] = pd.to_numeric(df['first_scrn'], errors='coerce').fillna(0)
     df['first_week_audi'] = pd.to_numeric(df['first_week_audi'], errors='coerce').fillna(0)
     
+    # nation 결측치 및 빈 문자열 처리
+    df['nation'] = df['nation'].fillna('미상').astype(str)
+    
     return df
 
 df = load_data()
@@ -222,3 +225,33 @@ st.plotly_chart(fig_bubble, use_container_width=True)
 st.divider()
 st.markdown("💡 **이 그래프로 알 수 있는 것**")
 st.info("개봉일 스크린 수와 총 관객 수 관계에 더해, 원의 크기를 통해 초기 흥행(개봉 첫 주 관객 수)이 최종 총 관객 수 형성 및 흥행 지속성에 얼마나 영향을 주었는지 3가지 차원으로 파악할 수 있습니다.")
+
+st.write("")
+
+# -------------------------------------------------------------------
+# 일곱 번째 그래프: 제작 국가 -> 장르 계층 구조 (선버스트 차트)
+# -------------------------------------------------------------------
+st.subheader("7. 제작 국가 및 장르별 영화 편수 (선버스트)")
+
+# 제작 국가와 장르별 영화 편수 집계
+df_sunburst = df.groupby(['nation', 'genre'], as_index=False).size()
+df_sunburst.columns = ['nation', 'genre', 'count']
+
+# 선버스트 차트 생성 (nation -> genre 계층 구조, 크기: count)
+fig_sunburst = px.sunburst(
+    df_sunburst,
+    path=['nation', 'genre'],
+    values='count',
+    title="제작 국가 및 장르별 영화 편수 분포",
+    color='nation'
+)
+
+fig_sunburst.update_traces(
+    hovertemplate="<b>%{label}</b><br>영화 편수: %{value}편<extra></extra>"
+)
+
+st.plotly_chart(fig_sunburst, use_container_width=True)
+
+st.divider()
+st.markdown("💡 **이 그래프로 알 수 있는 것**")
+st.info("영화의 제작 국가별 비중과 각 국가 내에서 어떤 장르의 영화들이 주로 제작되어 상위권에 진입했는지 계층적 비중을 다면적으로 살펴볼 수 있습니다.")
