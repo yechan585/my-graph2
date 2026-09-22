@@ -13,8 +13,24 @@ st.title("영화 데이터 그래프 도감 2 - 분포와 관계")
 # 데이터 불러오기 및 전처리
 @st.cache_data
 def load_data():
-    url = "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_movies.csv"
-    df = pd.read_csv(url)
+    # 저장소 경로 변경 대비 여러 가능 URL 순차 시도
+    urls = [
+        "https://raw.githubusercontent.com/greatsong/modudata/main/kobis_movies.csv",
+        "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_movies.csv",
+        "https://raw.githubusercontent.com/modudata/data/main/kobis_movies.csv"
+    ]
+    
+    df = None
+    for url in urls:
+        try:
+            df = pd.read_csv(url)
+            break
+        except Exception:
+            continue
+            
+    if df is None:
+        st.error("데이터를 불러오는데 실패했습니다. URL 경로를 확인해 주세요.")
+        st.stop()
     
     # genre 열 전처리: 세로막대 기호(|)로 분리 후 첫 번째 장르만 추출
     df['genre'] = df['genre'].astype(str).str.split('|').str[0]
@@ -22,9 +38,9 @@ def load_data():
     # 숫자형 데이터 변환 및 결측치 처리
     df['total_audi'] = pd.to_numeric(df['total_audi'], errors='coerce').fillna(0)
     df['first_scrn'] = pd.to_numeric(df['first_scrn'], errors='coerce').fillna(0)
-    df['first_show'] = pd.to_numeric(df['first_show'], errors='coerce').fillna(0)
-    df['first_week_audi'] = pd.to_numeric(df['first_week_audi'], errors='coerce').fillna(0)
-    df['days_in_top10'] = pd.to_numeric(df['days_in_top10'], errors='coerce').fillna(0)
+    df['first_show'] = pd.to_numeric(df.get('first_show', 0), errors='coerce').fillna(0)
+    df['first_week_audi'] = pd.to_numeric(df.get('first_week_audi', 0), errors='coerce').fillna(0)
+    df['days_in_top10'] = pd.to_numeric(df.get('days_in_top10', 0), errors='coerce').fillna(0)
     
     # nation 결측치 및 빈 문자열 처리
     df['nation'] = df['nation'].fillna('미상').astype(str)
